@@ -16,12 +16,18 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->string('role')->default('customer'); // 👉 Add role field
+
+            // Make password nullable for Google login users
+            $table->string('password')->nullable();
+
+            $table->string('google_id')->nullable()->unique();
+
+            // Restrict roles to fixed options
+            $table->enum('role', ['super_admin', 'admin', 'writer', 'customer'])->default('customer');
+
             $table->rememberToken();
             $table->timestamps();
         });
-
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');
@@ -43,8 +49,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };

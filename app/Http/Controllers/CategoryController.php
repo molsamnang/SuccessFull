@@ -9,9 +9,8 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        // $categories = Category::latest()->paginate(10);
-        // return view('category.index', compact('categories'));
-       return view('image');
+        $categories = Category::latest()->paginate(10);
+        return view('category.index', compact('categories'));
     }
 
     public function store(Request $request)

@@ -1,77 +1,122 @@
-@extends('layouts.app')
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>បង្កើតគណនី</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #0d100c;
+            color: white;
+            font-family: 'Noto Sans Khmer', sans-serif;
+        }
 
-@section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">{{ __('Register') }}</div>
+        .login-card {
+            max-width: 500px;
+            margin: auto;
+            background-color: #0b1e3f;
+            border-radius: 10px;
+            padding: 30px;
+            margin-top: 20px;
+        }
 
-                <div class="card-body">
-                    <form method="POST" action="{{ route('register') }}">
-                        @csrf
+        .form-control::placeholder {
+            color: #ccc;
+        }
 
-                        <div class="row mb-3">
-                            <label for="name" class="col-md-4 col-form-label text-md-end">{{ __('Name') }}</label>
+        .btn-magic {
+            background-color: #b5f574;
+            color: black;
+            font-weight: bold;
+        }
 
-                            <div class="col-md-6">
-                                <input id="name" type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" required autocomplete="name" autofocus>
+        .logo-img {
+            width: 60px;
+            height: auto;
+            border-radius: 50%;
+        }
 
-                                @error('name')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
+        a {
+            color: #8ee4af;
+            text-decoration: none;
+        }
 
-                        <div class="row mb-3">
-                            <label for="email" class="col-md-4 col-form-label text-md-end">{{ __('Email Address') }}</label>
+        a:hover {
+            text-decoration: underline;
+        }
 
-                            <div class="col-md-6">
-                                <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email">
+        .invalid-feedback strong {
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
 
-                                @error('email')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <label for="password" class="col-md-4 col-form-label text-md-end">{{ __('Password') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
-
-                                @error('password')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <label for="password-confirm" class="col-md-4 col-form-label text-md-end">{{ __('Confirm Password') }}</label>
-
-                            <div class="col-md-6">
-                                <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
-                            </div>
-                        </div>
-
-                        <div class="row mb-0">
-                            <div class="col-md-6 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Register') }}
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+    <div class="text-center mt-4">
+        <img src="/p.png" class="logo-img" alt="Logo" />
+        <h2>បង្កើតគណនីថ្មី</h2>
     </div>
-</div>
-@endsection
+
+    <div class="login-card">
+        <form method="POST" action="{{ route('register') }}">
+            @csrf
+
+            <div class="mb-3">
+                <label for="name" class="form-label">ឈ្មោះ *</label>
+                <input id="name" type="text"
+                    class="form-control @error('name') is-invalid @enderror"
+                    name="name" value="{{ old('name') }}"
+                    placeholder="បញ្ចូលឈ្មោះរបស់អ្នក" required autofocus>
+                @error('name')
+                    <span class="invalid-feedback d-block" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                @enderror
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">អាសយដ្ឋានអ៊ីមែល *</label>
+                <input id="email" type="email"
+                    class="form-control @error('email') is-invalid @enderror"
+                    name="email" value="{{ old('email') }}"
+                    placeholder="បញ្ចូលអ៊ីមែលរបស់អ្នក" required>
+                @error('email')
+                    <span class="invalid-feedback d-block" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                @enderror
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">ពាក្យសម្ងាត់ *</label>
+                <input id="password" type="password"
+                    class="form-control @error('password') is-invalid @enderror"
+                    name="password" placeholder="បញ្ចូលពាក្យសម្ងាត់" required>
+                @error('password')
+                    <span class="invalid-feedback d-block" role="alert">
+                        <strong>{{ $message }}</strong>
+                    </span>
+                @enderror
+            </div>
+
+            <div class="mb-3">
+                <label for="password-confirm" class="form-label">បញ្ជាក់ពាក្យសម្ងាត់ *</label>
+                <input id="password-confirm" type="password"
+                    class="form-control" name="password_confirmation"
+                    placeholder="បញ្ជាក់ពាក្យសម្ងាត់" required>
+            </div>
+
+            <div class="d-grid mb-3">
+                <button type="submit" class="btn btn-magic">✱ បង្កើតគណនី</button>
+            </div>
+
+            <p class="text-center">
+                មានគណនីរួចហើយ? <a href="{{ route('login') }}">ចូលឥឡូវនេះ</a>
+            </p>
+        </form>
+    </div>
+
+</body>
+</html>

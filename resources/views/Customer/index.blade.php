@@ -1,143 +1,127 @@
-@extends('home')
+@extends('layouts.app')
 
 @section('data_one')
-    <div class="row d-flex ">
-        <div class="col-12">
-            <div class="container mt-2">
-                <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createModal">Add
-                    Customer</button>
+@php
+    $role = strtolower(auth()->user()->role ?? '');
+    $role = str_replace('super_admin', 'superadmin', $role);
+@endphp
 
-                <!-- Customer Table -->
-                <table class="table table-bordered">
+<!-- Flash Message -->
+@if (session('success'))
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: '{{ session('success') }}',
+        });
+    </script>
+@endif
+
+<div class="row">
+    <div class="col-12">
+        <div class="card card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="card-title">Customer Management</h4>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+                    <i class="fa fa-plus-circle me-1"></i> Add Customer
+                </button>
+            </div>
+
+            <!-- Search Form -->
+            <form method="GET" class="row g-2 mb-3">
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control" placeholder="Search customers..." value="{{ request('search') }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="perPage" class="form-select" onchange="this.form.submit()">
+                        @foreach ([10, 25, 50, 100] as $limit)
+                            <option value="{{ $limit }}" {{ request('perPage', 10) == $limit ? 'selected' : '' }}>
+                                Show {{ $limit }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary" type="submit">Filter</button>
+                </div>
+            </form>
+
+            <!-- Table -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle text-center">
                     <thead class="table-dark">
                         <tr>
                             <th>#</th>
-                            <th>Name</th>
-                            <th>Email</th>
+                            <th>Full Name</th>
+                            <th>Gender</th>
                             <th>Phone</th>
-                            <th>Action</th>
+                            <th>Address</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($customers as $customer)
+                        @forelse ($customers as $key => $customer)
                             <tr>
-                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $customers->firstItem() + $key }}</td>
                                 <td>{{ $customer->name }}</td>
-                                <td>{{ $customer->email }}</td>
+                                <td>{{ $customer->gender }}</td>
                                 <td>{{ $customer->phone }}</td>
+                                <td>{{ $customer->address }}</td>
+                                <td>{{ $customer->created_at->format('d-m-Y') }}</td>
                                 <td>
-                                    <!-- Show Modal Button -->
-                                    <button class="btn btn-sm btn-info text-white" data-bs-toggle="modal"
-                                        data-bs-target="#showModal{{ $customer->id }}">
-                                        <i class="fas fa-eye"></i> Show
+                                    <button class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#showModal{{ $customer->id }}">
+                                        <i class="fas fa-eye"></i>
                                     </button>
-
-                                    <!-- Edit Modal Button -->
-                                    <button class="btn btn-sm btn-warning text-white" data-bs-toggle="modal"
-                                        data-bs-target="#editModal{{ $customer->id }}">
-                                        <i class="fas fa-edit"></i> Edit
+                                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ $customer->id }}">
+                                        <i class="fas fa-edit"></i>
                                     </button>
-
-                                    <!-- Delete Form -->
-                                    <form action="{{ route('customers.destroy', $customer->id) }}" method="POST"
-                                        style="display:inline-block;">
+                                    <form action="{{ route("$role.customers.destroy", $customer->id) }}" method="POST" class="d-inline delete-form">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">
-                                            <i class="fas fa-trash"></i> Delete
+                                        <button class="btn btn-sm btn-danger delete-btn">
+                                            <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </form>
                                 </td>
-
                             </tr>
 
-                            <!-- Show Modal -->
-                            <div class="modal fade" id="showModal{{ $customer->id }}" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Customer Info</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p><strong>Name:</strong> {{ $customer->name }}</p>
-                                            <p><strong>Email:</strong> {{ $customer->email }}</p>
-                                            <p><strong>Phone:</strong> {{ $customer->phone }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Edit Modal -->
-                            <div class="modal fade" id="editModal{{ $customer->id }}" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <form action="{{ route('customers.update', $customer->id) }}" method="POST">
-                                        @csrf
-                                        @method('PUT')
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Edit Customer</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <input type="text" name="name" class="form-control mb-2"
-                                                    value="{{ $customer->name }}" required>
-                                                <input type="email" name="email" class="form-control mb-2"
-                                                    value="{{ $customer->email }}" required>
-                                                <input type="text" name="phone" class="form-control mb-2"
-                                                    value="{{ $customer->phone }}">
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="submit" class="btn btn-warning">Update</button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        @endforeach
+                            <!-- Include Show and Edit Modals -->
+                            {{-- @include('Customer.modal_show', ['customer' => $customer])
+                            @include('Customer.modal_edit', ['customer' => $customer]) --}}
+                        @empty
+                            <tr>
+                                <td colspan="7">No customers found.</td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
-
-                {{ $customers->links() }}
             </div>
 
-            <!-- Create Modal -->
-            <div class="modal fade" id="createModal" tabindex="-1">
-                <div class="modal-dialog">
-                    <form action="{{ route('customers.store') }}" method="POST">
-                        @csrf
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Create Customer</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <input type="text" name="name" class="form-control mb-2" placeholder="Name" required>
-                                <input type="email" name="email" class="form-control mb-2" placeholder="Email" required>
-                                <input type="text" name="phone" class="form-control mb-2" placeholder="Phone">
-                            </div>
-                            <div class="modal-footer">
-                                <button type="submit" class="btn btn-primary">Save Customer</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
+            {{ $customers->appends(request()->query())->links('pagination::bootstrap-5') }}
         </div>
     </div>
-@endsection
+</div>
 
-@push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{{-- @include('Customer.modal_create') <!-- Add Modal --> --}}
 
-    @if (session('success'))
-        <script>
+<!-- SweetAlert for Delete Confirmation -->
+<script>
+    document.querySelectorAll('.delete-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
             Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: "{{ session('success') }}",
-                confirmButtonText: 'OK'
+                title: 'Are you sure?',
+                text: 'This customer will be deleted!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete it!',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
             });
-        </script>
-    @endif
-@endpush
+        });
+    });
+</script>
+@endsection

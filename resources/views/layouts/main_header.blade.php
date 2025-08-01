@@ -182,9 +182,9 @@
                   <li class="nav-item topbar-user dropdown hidden-caret">
                       <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#"
                           aria-expanded="false">
-                          <div class="avatar-sm">
-                              <img src="" alt="Profile" class="avatar-img " />
-                          </div>
+                          {{-- <div class="avatar-sm">
+                              <img src="p.png" alt="Profile" class="avatar-img " />
+                          </div> --}}
                           <span class="profile-username">
                               <span class="op-7">Admin</span>
                               <span class="fw-bold">Hi</span>
@@ -195,7 +195,7 @@
                               <li>
                                   <div class="user-box">
                                       <div class="avatar-lg">
-                                          <img src="assets/image/p.png" alt="image profile"
+                                          <img src="p.png" alt="image profile"
                                               class="avatar-img rounded" />
                                       </div>
                                       <div class="u-text">
@@ -214,7 +214,16 @@
                                   <div class="dropdown-divider"></div>
                                   <a class="dropdown-item" href="#">Account Setting</a>
                                   <div class="dropdown-divider"></div>
-                                  <a class="dropdown-item" href="#">Logout</a>
+                                  <a class="dropdown-item" href="#"
+                                      onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                      Logout
+                                  </a>
+
+                                  <form id="logout-form" action="{{ route('logout') }}" method="POST"
+                                      class="d-none">
+                                      @csrf
+                                  </form>
+
                               </li>
                           </div>
                       </ul>

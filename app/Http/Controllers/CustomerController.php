@@ -7,11 +7,28 @@ use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $customers = Customer::latest()->paginate(10);
-        return view('Customer.index', compact('customers'));
+        $perPage = $request->get('per_page', 10);
+        $search = $request->get('search', '');
+
+        $customers = Customer::query()
+            ->when($search, function ($query, $search) {
+                $query->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            })
+            ->latest()
+            ->paginate($perPage)
+            ->appends(['search' => $search, 'per_page' => $perPage]);
+
+        $role = strtolower(auth()->user()->role ?? '');
+        $role = str_replace('super_admin', 'superadmin', $role);
+
+        return view('Customer.index', compact('customers', 'perPage', 'search', 'role'));
     }
+
+
+
 
     public function store(Request $request)
     {

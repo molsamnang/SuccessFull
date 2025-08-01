@@ -45,12 +45,16 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        return User::create([
+        $user = User::create([
             'name'     => $data['name'],
             'email'    => $data['email'],
             'password' => Hash::make($data['password']),
-            'role'     => 'customer', // Default role
+            'role'     => 'customer', // Optional: if your users table has 'role' column
         ]);
+
+        // ✅ Assign Spatie permission role
+        $user->assignRole('customer');
+
+        return $user;
     }
 }
-    

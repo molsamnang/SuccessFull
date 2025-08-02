@@ -1,20 +1,19 @@
 @extends('layouts.app')
 
 @section('data_one')
-<div class="container-fluid bg-dark text-white p-4 min-vh-100">
-    <h2>User Role Management</h2>
+    @php
+        $role = strtolower(auth()->user()->role ?? '');
+        $role = str_replace('super_admin', 'superadmin', $role);
+    @endphp
 
-    <!-- SweetAlert2 CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!-- Flash Messages -->
     @if (session('success'))
         <script>
             Swal.fire({
                 icon: 'success',
                 title: 'Success',
                 text: '{{ session('success') }}',
-                confirmButtonColor: '#3085d6'
+                timer: 2500,
+                showConfirmButton: false
             });
         </script>
     @endif
@@ -30,148 +29,254 @@
         </script>
     @endif
 
-    <div class="table-responsive mt-4">
-        <table class="table table-dark table-bordered table-hover text-white align-middle text-center">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Password</th> {{-- Masked, no real value --}}
-                    <th>Role</th>
-                    <th>ActionRole</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($users as $key => $user)
-                <tr>
-                    <td>{{ $users->firstItem() + $key }}</td>
-                    <td>{{ $user->name }}</td>
-                    <td>{{ $user->email }}</td>
-                    <td>********</td> {{-- Never show real password --}}
-                    <td>
-                        <span class="badge bg-info text-dark">
-                            {{ $user->getRoleNames()->first() ?? 'None' }}
-                        </span>
-                    </td>
+    <div class="container">
+        <div class="row" style="max-width:100%;">
+            <div class="col-12">
+                <div class="card card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="card-title">User Role Management</h4>
+                    </div>
 
-                    {{-- Toggle Role --}}
-                    <td>
-                        @if (Auth::id() != $user->id)
-                        <form action="{{ route('superadmin.users.toggle-role', $user->id) }}" method="POST" onsubmit="return confirm('Toggle role for this user?')">
-                            @csrf
-                            <button type="submit" class="btn btn-sm btn-warning">
-                                {{ $user->hasRole('User') ? 'Make Admin' : 'Make User' }}
+                    <!-- Search + PerPage Form -->
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                        <form method="GET" class="d-flex flex-wrap align-items-center gap-2 mb-0" style="width:100%;">
+                            <div>
+                                <input type="text" name="search" class="form-control flex-grow-1"
+                                    placeholder="Search users..." value="{{ request('search') }}"
+                                    style="min-width: 200px; max-width: 300px;">
+                            </div>
+
+                            <div>
+                                <select name="perPage" class="form-select" onchange="this.form.submit()"
+                                    style="min-width: 120px; width: auto;">
+                                    @foreach ([10, 20, 30, 50] as $limit)
+                                        <option value="{{ $limit }}"
+                                            {{ request('perPage', 10) == $limit ? 'selected' : '' }}>
+                                            Show {{ $limit }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div>
+                                <button type="submit" class="btn btn-outline-secondary">
+                                    <i class="fas fa-search me-1"></i> Filter
+                                </button>
+                            </div>
+
+                            <button type="button" class="btn btn-primary ms-auto" data-bs-toggle="modal"
+                                data-bs-target="#createUserModal">
+                                Add User
                             </button>
                         </form>
-                        @else
-                        <span class="text-muted">You</span>
-                        @endif
-                    </td>
+                    </div>
 
-                    {{-- Edit & Delete Buttons --}}
-                    <td>
-                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editModal{{ $user->id }}">
-                            Edit
-                        </button>
-                        <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $user->id }}">
-                            Delete
-                        </button>
-                    </td>
-                </tr>
+                    <!-- Table wrapper: scroll vertical + horizontal -->
+                    <div class="table-wrapper"
+                        style="max-height: 500px; overflow-y: auto; overflow-x: auto; border: 1px solid #dee2e6; border-radius: 0.25rem;">
+                        <table class="table table-bordered table-hover align-middle text-center mb-0"
+                            style="min-width: 900px;">
+                            <thead style="position: sticky; top: 0; z-index: 10;">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Password</th>
+                                    <th>Role</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($users as $key => $user)
+                                    <tr>
+                                        <td>{{ $users->firstItem() + $key }}</td>
+                                        <td>{{ $user->name }}</td>
+                                        <td>{{ $user->email }}</td>
+                                        <td>******</td>
+                                        <td>
+                                            <span class="badge bg-info text-dark">
+                                                {{ $user->getRoleNames()->first() ?? 'None' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if (Auth::id() !== $user->id)
+                                                <form action="{{ route('superadmin.users.toggle-role', $user->id) }}"
+                                                    method="POST" class="d-inline toggle-role-form">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-warning"
+                                                        title="Toggle Role">
+                                                        @if ($user->hasRole('customer'))
+                                                            <i class="fas fa-user-shield"></i> Make Admin
+                                                        @else
+                                                            <i class="fas fa-user"></i> Make Customer
+                                                        @endif
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <span class="text-muted"><i class="fas fa-user-check"></i> You</span>
+                                            @endif
 
-                {{-- Edit Modal --}}
-                <div class="modal fade" id="editModal{{ $user->id }}" tabindex="-1" aria-labelledby="editModalLabel{{ $user->id }}" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <form method="POST" action="{{ route('superadmin.users.update', $user->id) }}">
-                            @csrf
-                            @method('PUT')
-                            <div class="modal-content bg-dark text-white">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="editModalLabel{{ $user->id }}">Edit User</h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    {{-- Name --}}
-                                    <div class="mb-3">
-                                        <label for="name{{ $user->id }}" class="form-label">Name</label>
-                                        <input type="text" name="name" id="name{{ $user->id }}" class="form-control" value="{{ old('name', $user->name) }}" required>
+                                            <button class="btn btn-sm btn-info" data-bs-toggle="modal"
+                                                data-bs-target="#editModal{{ $user->id }}" title="Edit User">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </button>
+
+                                            <form method="POST"
+                                                action="{{ route('superadmin.users.destroy', $user->id) }}"
+                                                class="d-inline delete-form" id="delete-form-{{ $user->id }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" class="btn btn-sm btn-danger delete-btn"
+                                                    data-id="{{ $user->id }}" title="Delete User">
+                                                    <i class="fas fa-trash-alt"></i> Delete
+                                                </button>
+                                            </form>
+                                        </td>
+
+                                    </tr>
+
+                                    {{-- Edit Modal --}}
+                                    <div class="modal fade" id="editModal{{ $user->id }}" tabindex="-1"
+                                        aria-labelledby="editModalLabel{{ $user->id }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <form method="POST"
+                                                action="{{ route('superadmin.users.update', $user->id) }}">
+                                                @csrf
+                                                @method('PUT')
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Edit User</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                            aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="mb-3">
+                                                            <label>Name</label>
+                                                            <input type="text" name="name" class="form-control"
+                                                                value="{{ $user->name }}" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label>Email</label>
+                                                            <input type="email" name="email" class="form-control"
+                                                                value="{{ $user->email }}" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label>Role</label>
+                                                            <select name="role" class="form-select">
+                                                                @foreach (['super_admin', 'admin', 'writer', 'customer'] as $roleOption)
+                                                                    <option value="{{ $roleOption }}"
+                                                                        @if ($user->hasRole($roleOption)) selected @endif>
+                                                                        {{ ucfirst($roleOption) }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label>New Password (optional)</label>
+                                                            <input type="password" name="password" class="form-control">
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label>Confirm Password</label>
+                                                            <input type="password" name="password_confirmation"
+                                                                class="form-control">
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary"
+                                                            data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-success">Save
+                                                            Changes</button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
                                     </div>
+                                @empty
+                                    <tr>
+                                        <td colspan="5">No users found.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
 
-                                    {{-- Email --}}
-                                    <div class="mb-3">
-                                        <label for="email{{ $user->id }}" class="form-label">Email</label>
-                                        <input type="email" name="email" id="email{{ $user->id }}" class="form-control" value="{{ old('email', $user->email) }}" required>
-                                    </div>
-
-                                    {{-- Role Dropdown --}}
-                                    <div class="mb-3">
-                                        <label for="role{{ $user->id }}" class="form-label">Role</label>
-                                        <select name="role" id="role{{ $user->id }}" class="form-select" required>
-                                            @foreach(['super_admin', 'admin', 'writer', 'customer', 'User', 'Admin'] as $role)
-                                            <option value="{{ $role }}" @if($user->hasRole($role)) selected @endif>{{ ucfirst($role) }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    {{-- Password (optional) --}}
-                                    <div class="mb-3">
-                                        <label for="password{{ $user->id }}" class="form-label">New Password (leave blank to keep current)</label>
-                                        <input type="password" name="password" id="password{{ $user->id }}" class="form-control" autocomplete="new-password" placeholder="Enter new password">
-                                    </div>
-
-                                    {{-- Password Confirmation --}}
-                                    <div class="mb-3">
-                                        <label for="password_confirmation{{ $user->id }}" class="form-label">Confirm New Password</label>
-                                        <input type="password" name="password_confirmation" id="password_confirmation{{ $user->id }}" class="form-control" autocomplete="new-password" placeholder="Confirm new password">
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                    <button type="submit" class="btn btn-success">Save Changes</button>
-                                </div>
-                            </div>
-                        </form>
+                    <!-- Pagination -->
+                    <div class="mt-3">
+                        {{ $users->appends(request()->query())->links('pagination::bootstrap-5') }}
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                {{-- Delete Modal --}}
-                <div class="modal fade" id="deleteModal{{ $user->id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ $user->id }}" aria-hidden="true">
-                    <div class="modal-dialog">
-                        <form method="POST" action="{{ route('superadmin.users.destroy', $user->id) }}">
-                            @csrf
-                            @method('DELETE')
-                            <div class="modal-content bg-dark text-white">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="deleteModalLabel{{ $user->id }}">Confirm Delete</h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    Are you sure you want to delete user <strong>{{ $user->name }}</strong>?
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
-                                </div>
-                            </div>
-                        </form>
+    <!-- Create User Modal -->
+    <div class="modal fade" id="createUserModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form method="POST" action="{{ route('superadmin.store') }}">
+                @csrf
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label>Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Role</label>
+                            <select name="role" class="form-select" required>
+                                <option value="super_admin">Super Admin</option>
+                                <option value="admin">Admin</option>
+                                <option value="writer">Writer</option>
+                                <option value="customer" selected>Customer</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label>Password</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Confirm Password</label>
+                            <input type="password" name="password_confirmation" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add User</button>
                     </div>
                 </div>
-
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-
-    {{-- Pagination --}}
-    <div class="d-flex justify-content-between align-items-center mt-3">
-        <div>
-            Showing {{ $users->firstItem() }} to {{ $users->lastItem() }} of {{ $users->total() }} users
-        </div>
-        <div>
-            {{ $users->links('pagination::bootstrap-4') }}
+            </form>
         </div>
     </div>
-</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.delete-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    let userId = this.getAttribute('data-id');
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: 'This user will be deleted!',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, delete it!',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById('delete-form-' + userId).submit();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection

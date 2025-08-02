@@ -121,11 +121,11 @@
                 Continue with Google
             </a>
 
-            <button type="button" class="btn btn-apple d-flex align-items-center justify-content-center">
+            {{-- <button type="button" class="btn btn-apple d-flex align-items-center justify-content-center">
                 <img src="https://cdn-icons-png.flaticon.com/512/179/179309.png" width="20" class="me-2"
                     alt="Apple logo" />
                 Continue with Apple
-            </button>
+            </button> --}}
         </div>
 
         <small class="text-muted d-block mt-4">

@@ -11,12 +11,6 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Ensure roles exist
-        Role::firstOrCreate(['name' => 'super_admin']);
-        Role::firstOrCreate(['name' => 'admin']);
-        Role::firstOrCreate(['name' => 'writer']);
-        Role::firstOrCreate(['name' => 'customer']);
-
         $users = [
             [
                 'name' => 'Super Admin',
@@ -44,18 +38,17 @@ class UserSeeder extends Seeder
             ],
         ];
 
-        foreach ($users as $userData) {
+        foreach ($users as $data) {
             $user = User::firstOrCreate(
-                ['email' => $userData['email']],
+                ['email' => $data['email']],
                 [
-                    'name' => $userData['name'],
-                    'password' => $userData['password'],
-                    'role' => $userData['role'], // Keep if you still want to keep the role column
+                    'name'     => $data['name'],
+                    'password' => $data['password'],
+                    'role'     => $data['role'], // optional column in users table
                 ]
             );
 
-            // Assign Spatie role
-            $user->assignRole($userData['role']);
+            $user->assignRole($data['role']);
         }
     }
 }

@@ -20,5 +20,6 @@
         </div>
     </div>
 </div>
+@yield('scripts')
 @stack('scripts')
 @include('layouts.footer')

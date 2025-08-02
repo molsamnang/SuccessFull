@@ -186,8 +186,9 @@
                               <img src="p.png" alt="Profile" class="avatar-img " />
                           </div> --}}
                           <span class="profile-username">
-                              <span class="op-7">Admin</span>
-                              <span class="fw-bold">Hi</span>
+                              <span class="op-7">Account :</span>
+                              <span class="fw-bold">{{ auth()->user()->name }}</span>
+
                           </span>
                       </a>
                       <ul class="dropdown-menu dropdown-user animated fadeIn">
@@ -195,8 +196,7 @@
                               <li>
                                   <div class="user-box">
                                       <div class="avatar-lg">
-                                          <img src="p.png" alt="image profile"
-                                              class="avatar-img rounded" />
+                                          <img src="p.png" alt="image profile" class="avatar-img rounded" />
                                       </div>
                                       <div class="u-text">
                                           <h4>Hizrian</h4>
@@ -232,4 +232,6 @@
           </div>
       </nav>
       <!-- End Navbar -->
+   
+
   </div>

@@ -67,6 +67,7 @@ Route::middleware(['auth', 'super_admin'])->prefix('superadmin')->name('superadm
 
 Route::middleware(['auth', 'super_admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
     Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::post('/store', [UserController::class, 'store'])->name('store');
     Route::post('users/{id}/toggle-role', [UserController::class, 'toggleRole'])->name('users.toggle-role');
     Route::put('users/{id}', [UserController::class, 'update'])->name('users.update');
     Route::delete('users/{id}', [UserController::class, 'destroy'])->name('users.destroy');

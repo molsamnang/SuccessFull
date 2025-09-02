@@ -6,113 +6,151 @@ use App\Models\Post_;
 use App\Models\Category;
 use App\Models\Customer;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $role = $this->getRole();
-        $posts = Post_::with('category', 'customer')->latest()->get();
-        return view('posts.index', compact('posts', 'role'));
-    }
+        $query = Post_::with(['customer', 'category', 'comments.customer', 'likes']);
 
-    public function create()
-    {
-        $role = $this->getRole();
-        $categories = Category::all();
+        if ($search = $request->input('search')) {
+            $query->where('content', 'like', "%{$search}%");
+        }
+        $perPage = $request->input('perPage', 10);
+        $posts = $query->latest()->paginate($perPage);
         $customers = Customer::all();
-        return view('posts.create', compact('categories', 'customers', 'role'));
+        $categories = Category::all();
+        $role = $this->getRole();
+        $posts->getCollection()->transform(function ($post) {
+            if (is_string($post->images)) {
+                $post->images = json_decode($post->images) ?: [];
+            }
+            if ($post->customer && $post->customer->profile_image) {
+                $post->customer->profile_image_url = asset('storage/' . $post->customer->profile_image);
+            } else {
+                $post->customer->profile_image_url = asset('images/profile_image.png');
+            }
+
+            return $post;
+        });
+
+        return view('posts.index', compact('posts', 'customers', 'categories', 'role'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'slug' => 'nullable|unique:post_s,slug',
-            'content' => 'required',
-            'image' => 'nullable|image|max:2048',
+            'content' => 'required|string',
+            'status' => 'required|in:draft,published,archived',
+            'customer_id' => 'required|exists:customers,id',
+            'category_id' => 'required|exists:categories,id',
+            'images.*' => 'image|max:4048', 
         ]);
 
-        $slug = $request->slug ?: Str::slug($request->title);
+        $imagePaths = [];
 
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('post_images', 'public');
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $imagePaths[] = $image->store('posts', 'public');
+            }
         }
 
-        $post = Post_::create([
-            'title' => $request->title,
-            'slug' => $slug,
-            'content' => $request->content,
-            'poster_head' => $request->poster_head,
-            'poster_sizes' => json_encode(explode(',', $request->poster_sizes)),
-            'status' => $request->status,
-            'image' => $imagePath,
-            'customer_id' => $request->customer_id,
-            'category_id' => $request->category_id,
+        Post_::create([
+            'content' => $request->input('content'),
+            'status' => $request->input('status'),
+            'customer_id' => $request->input('customer_id'),
+            'category_id' => $request->input('category_id'),
+            'images' => $imagePaths,
         ]);
 
         return redirect()->route($this->getRole() . '.posts.index')->with('success', 'Post created successfully!');
     }
 
+    /**
+     * Display the specified post.
+     */
     public function show($id)
     {
+        $post = Post_::with('customer', 'category')->findOrFail($id);
         $role = $this->getRole();
-        $post_ = Post_::with('category', 'customer')->findOrFail($id);
-        return view('posts.show', compact('post_', 'role'));
+        return view('posts.show', compact('post', 'role'));
     }
 
+    /**
+     * Show the form for editing the specified post.
+     * (Not needed if you use modal edit on index page)
+     */
     public function edit($id)
     {
-        $role = $this->getRole();
-        $post_ = Post_::findOrFail($id);
-        $categories = Category::all();
+        $post = Post_::findOrFail($id);
         $customers = Customer::all();
-        return view('posts.edit', compact('post_', 'categories', 'customers', 'role'));
+        $categories = Category::all();
+        $role = $this->getRole();
+
+        return view('posts.edit', compact('post', 'customers', 'categories', 'role'));
     }
 
-    public function update(Request $request, $id)
+    /**
+     * Update the specified post in storage.
+     */
+    public function update(Request $request, Post_ $post)
     {
-        $post = Post_::findOrFail($id);
-
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'slug' => 'nullable|unique:post_s,slug,' . $post->id,
-            'content' => 'required',
-            'image' => 'nullable|image|max:102400',
-        ]);
-
-        $slug = $request->slug ?: Str::slug($request->title);
-
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('post_images', 'public');
-        } else {
-            $imagePath = $post->image;
+        try {
+            $validated = $request->validate([
+                'content' => 'required|string',
+                'status' => 'required|in:draft,published,archived',
+                'customer_id' => 'required|exists:customers,id',
+                'category_id' => 'required|exists:categories,id',
+                'images.*' => 'nullable|image|max:10048',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Redirect back with errors, old input and the ID to reopen modal
+            return redirect()->back()
+                ->withErrors($e->validator)
+                ->withInput()
+                ->with('edit_post_id', $post->id);
         }
 
-        $post->update([
-            'title' => $request->title,
-            'slug' => $slug,
-            'content' => $request->content,
-            'poster_head' => $request->poster_head,
-            'poster_sizes' => json_encode(explode(',', $request->poster_sizes)),
-            'status' => $request->status,
-            'image' => $imagePath,
-            'customer_id' => $request->customer_id,
-            'category_id' => $request->category_id,
-        ]);
+        // Fill the post with validated data
+        $post->fill($validated);
 
+        // Handle images if any uploaded
+        if ($request->hasFile('images')) {
+            // Delete old images if exist
+            if ($post->images && is_array($post->images)) {
+                foreach ($post->images as $img) {
+                    Storage::disk('public')->delete($img);
+                }
+            }
+
+            // Store new images
+            $images = [];
+            foreach ($request->file('images') as $image) {
+                $images[] = $image->store('posts', 'public');
+            }
+            $post->images = $images;
+        }
+
+        $post->save();
+
+        // Redirect back to index with success message
         return redirect()->route($this->getRole() . '.posts.index')->with('success', 'Post updated successfully!');
     }
 
+
+    /**
+     * Remove the specified post from storage.
+     */
     public function destroy($id)
     {
         $post = Post_::findOrFail($id);
 
-        if ($post->image) {
-            Storage::disk('public')->delete($post->image);
+        // Delete images from storage
+        if ($post->images && is_array($post->images)) {
+            foreach ($post->images as $image) {
+                Storage::disk('public')->delete($image);
+            }
         }
 
         $post->delete();
@@ -120,11 +158,12 @@ class PostController extends Controller
         return redirect()->route($this->getRole() . '.posts.index')->with('success', 'Post deleted successfully!');
     }
 
-    // Helper to detect role from URL
+    /**
+     * Helper to detect role from the URL segment for routing.
+     */
     private function getRole()
     {
         $segment = request()->segment(1);
         return in_array($segment, ['superadmin', 'admin', 'writer']) ? $segment : 'admin';
     }
 }
-

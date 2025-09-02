@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('password')->nullable();  // ✅ added
             $table->string('phone')->nullable();
-            $table->string('profile_image')->nullable(); // Store image path (e.g., 'images/profile.jpg')
-            $table->enum('gender', ['male', 'female', 'other'])->nullable(); // Gender as dropdown option
-            $table->text('address')->nullable(); // Full address
+            $table->string('profile_image')->nullable();
+            $table->enum('gender', ['male', 'female', 'other'])->nullable();
             $table->timestamps();
         });
     }

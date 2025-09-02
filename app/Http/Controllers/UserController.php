@@ -80,19 +80,23 @@ class UserController extends Controller
             'password' => 'nullable|string|min:6|confirmed',
         ]);
 
-        $user->name = $request->name;
+        $user->name  = $request->name;
         $user->email = $request->email;
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
         }
 
+        // update role column (enum)
+        $user->role = $request->role;
         $user->save();
 
+        // update spatie role
         $user->syncRoles([$request->role]);
 
         return redirect()->back()->with('success', 'User updated successfully.');
     }
+
 
     /**
      * Delete a user.
@@ -104,18 +108,20 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name'                  => 'required|string|max:255',
-            'email'                 => 'required|email|max:255|unique:users,email',
-            'role'                  => 'required|string|exists:roles,name',
-            'password'              => 'required|string|min:6|confirmed',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6|confirmed',
+            'role' => 'required|in:super_admin,admin,writer,customer',
         ]);
 
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'role' => $request->role, // ✅ ទុក enum ដែរ
         ]);
 
+        // ✅ បន្ថែម Spatie role ដែរ
         $user->assignRole($request->role);
 
         return redirect()->back()->with('success', 'User created successfully.');

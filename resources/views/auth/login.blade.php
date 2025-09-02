@@ -43,7 +43,7 @@
         }
 
         .logo-img {
-            width: 60px;
+            width: 80px;
             height: auto;
             border-radius: 50%;
         }
@@ -65,7 +65,7 @@
 <body>
 
     <div class="text-center mt-4">
-        <img src="p.png" class="logo-img" alt="Logo" />
+        <img src="Full_300px.png" class="logo-img" alt="Logo" />
         <h2>សុវត្ថិភាព</h2>
     </div>
 

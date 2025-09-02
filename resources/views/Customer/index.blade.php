@@ -19,26 +19,24 @@
     @endif
 
     <div class="container">
-        <div class="row" style="max-width:100%; ">
+        <div class="row" style="max-width:100%;">
             <div class="col-12">
                 <div class="card card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4 class="card-title">Customer Management</h4>
-
                     </div>
 
                     <!-- Search + PerPage Form -->
                     <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                         <form method="GET" class="d-flex flex-wrap align-items-center gap-2 mb-0">
-                            <div>
-                                <input type="text" name="search" class="form-control flex-grow-1"
-                                    placeholder="Search customers..." value="{{ request('search') }}"
-                                    style="min-width: 200px; max-width: 300px;">
+                            <div class="div">
+                                <input type="text" name="search" class="form-control" placeholder="Search customers..."
+                                    value="{{ request('search') }}" style="min-width: 200px; max-width: 300px;">
                             </div>
 
                             <div>
                                 <select name="perPage" class="form-select" onchange="this.form.submit()"
-                                    style="min-width: 120px; width: auto;">
+                                    style="min-width: 120px;">
                                     @foreach ([10, 25, 50, 100] as $limit)
                                         <option value="{{ $limit }}"
                                             {{ request('perPage', 10) == $limit ? 'selected' : '' }}>
@@ -48,34 +46,31 @@
                                 </select>
                             </div>
 
-                            <div>
-                                <button type="submit" class="btn btn-outline-secondary">
-                                    <i class="fas fa-search me-1"></i> Filter
-                                </button>
-
-                            </div>
+                           <div>
+                             <button type="submit" class="btn btn-outline-secondary">
+                                <i class="fas fa-search me-1"></i> Filter
+                            </button>
+                           </div>
                         </form>
-
 
                         <button class="btn btn-primary ms-auto" data-bs-toggle="modal" data-bs-target="#createModal">
                             Add Customer
                         </button>
                     </div>
 
-
-                    <!-- Table wrapper: scroll vertical + horizontal -->
+                    <!-- Table -->
                     <div class="table-wrapper"
                         style="max-height: 500px; overflow-y: auto; overflow-x: auto; border: 1px solid #dee2e6; border-radius: 0.25rem;">
                         <table class="table table-bordered table-hover align-middle text-center mb-0"
-                            style="min-width: 900px;">
-                            <thead class="" style="position: sticky; top: 0; z-index: 10;">
+                            style="min-width: 950px;">
+                            <thead style="position: sticky; top: 0; z-index: 10;">
                                 <tr>
                                     <th>#</th>
                                     <th>Profile</th>
                                     <th>Full Name</th>
                                     <th>Gender</th>
                                     <th>Phone</th>
-                                    <th>Address</th>
+                                    <th>Password</th>
                                     <th>Created At</th>
                                     <th>Actions</th>
                                 </tr>
@@ -87,7 +82,7 @@
                                         <td>
                                             @if ($customer->profile_image)
                                                 <img src="{{ asset('storage/' . $customer->profile_image) }}" width="40"
-                                                    height="40" class="rounded-circle" alt="Profile Image">
+                                                    height="40" class="rounded-circle" alt="Profile">
                                             @else
                                                 <span>No image</span>
                                             @endif
@@ -95,17 +90,25 @@
                                         <td>{{ $customer->name }}</td>
                                         <td>{{ ucfirst($customer->gender) }}</td>
                                         <td>{{ $customer->phone }}</td>
-                                        <td>{{ $customer->address }}</td>
+                                        <td>
+                                            @if ($customer->password)
+                                                ••••••••
+                                            @else
+                                                <em>None</em>
+                                            @endif
+                                        </td>
                                         <td>{{ $customer->created_at->format('d-m-Y') }}</td>
                                         <td>
                                             <button class="btn btn-sm btn-info text-white" data-bs-toggle="modal"
                                                 data-bs-target="#showModal{{ $customer->id }}">
                                                 <i class="fas fa-eye"></i> Show
                                             </button>
-                                            <button class="btn btn-sm btn-warning" data-bs-toggle="modal"
+
+                                            <button class="btn btn-sm btn-warning text-white" data-bs-toggle="modal"
                                                 data-bs-target="#editModal{{ $customer->id }}">
                                                 <i class="fas fa-edit"></i> Edit
                                             </button>
+
                                             <form action="{{ route("$role.customers.destroy", $customer->id) }}"
                                                 method="POST" class="d-inline delete-form">
                                                 @csrf
@@ -117,8 +120,8 @@
                                         </td>
                                     </tr>
 
-                                    @include('Customer.modal_show', ['customer' => $customer])
-                                    @include('Customer.modal_edit', ['customer' => $customer])
+                                    @include('customer.modal_show', ['customer' => $customer])
+                                    @include('customer.modal_edit', ['customer' => $customer])
                                 @empty
                                     <tr>
                                         <td colspan="8">No customers found.</td>
@@ -137,14 +140,14 @@
         </div>
     </div>
 
-    @include('Customer.modal_create')
+    @include('customer.modal_create')
 
+    <!-- SweetAlert Delete Confirmation -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.delete-form').forEach(function(form) {
                 form.addEventListener('submit', function(e) {
                     e.preventDefault();
-
                     Swal.fire({
                         title: 'Are you sure?',
                         text: 'This customer will be deleted!',
@@ -163,5 +166,26 @@
             });
         });
     </script>
+
+    <!-- Toggle password visibility in edit modals -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.toggle-password').forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    const icon = this.querySelector('i');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.classList.replace('fa-eye-slash', 'fa-eye');
+                    } else {
+                        input.type = 'password';
+                        icon.classList.replace('fa-eye', 'fa-eye-slash');
+                    }
+                });
+            });
+        });
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection

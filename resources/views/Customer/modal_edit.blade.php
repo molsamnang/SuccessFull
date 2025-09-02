@@ -2,7 +2,7 @@
 <div class="modal fade" id="editModal{{ $customer->id }}" tabindex="-1" aria-labelledby="editModalLabel{{ $customer->id }}" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <form action="{{ route("$role.customers.update", $customer->id) }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route($role . '.customers.update', $customer->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -11,44 +11,65 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
-                <div class="modal-body row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" name="name" class="form-control" value="{{ $customer->name }}" required>
+                <div class="modal-body row">
+                    <!-- Name -->
+                    <div class="mb-3 col-md-6">
+                        <label for="name{{ $customer->id }}" class="form-label">Name</label>
+                        <input type="text" class="form-control" name="name" id="name{{ $customer->id }}" value="{{ $customer->name }}" required>
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Gender</label>
-                        <select name="gender" class="form-select" required>
+                    <!-- Email -->
+                    <div class="mb-3 col-md-6">
+                        <label for="email{{ $customer->id }}" class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" id="email{{ $customer->id }}" value="{{ $customer->email }}" required>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="mb-3 col-md-6">
+                        <label for="phone{{ $customer->id }}" class="form-label">Phone</label>
+                        <input type="text" class="form-control" name="phone" id="phone{{ $customer->id }}" value="{{ $customer->phone }}">
+                    </div>
+
+                    <!-- Gender -->
+                    <div class="mb-3 col-md-6">
+                        <label for="gender{{ $customer->id }}" class="form-label">Gender</label>
+                        <select class="form-select" name="gender" id="gender{{ $customer->id }}">
+                            <option value="">-- Select Gender --</option>
                             <option value="male" {{ $customer->gender == 'male' ? 'selected' : '' }}>Male</option>
                             <option value="female" {{ $customer->gender == 'female' ? 'selected' : '' }}>Female</option>
+                            <option value="other" {{ $customer->gender == 'other' ? 'selected' : '' }}>Other</option>
                         </select>
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Phone</label>
-                        <input type="text" name="phone" class="form-control" value="{{ $customer->phone }}">
+                    <!-- Password -->
+                    <div class="mb-3 col-md-6">
+                        <label for="password{{ $customer->id }}" class="form-label">Password</label>
+                        <input type="password" class="form-control" name="password" id="password{{ $customer->id }}">
+                        <small class="text-muted">Leave blank to keep the same password</small>
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Address</label>
-                        <input type="text" name="address" class="form-control" value="{{ $customer->address }}">
+                    <!-- Confirm Password -->
+                    <div class="mb-3 col-md-6">
+                        <label for="password_confirmation{{ $customer->id }}" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" name="password_confirmation" id="password_confirmation{{ $customer->id }}">
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Profile Image</label>
-                        <input type="file" name="profile_image" class="form-control">
+                    <!-- Profile Image -->
+                    <div class="mb-3 col-md-6">
+                        <label for="profile_image{{ $customer->id }}" class="form-label">Profile Image</label>
+                        <input type="file" class="form-control" name="profile_image" id="profile_image{{ $customer->id }}">
                         @if ($customer->profile_image)
-                            <img src="{{ asset('storage/' . $customer->profile_image) }}" alt="Current Image" width="60" class="mt-2">
+                            <div class="mt-2">
+                                <img src="{{ asset('storage/' . $customer->profile_image) }}" alt="Profile" width="80">
+                            </div>
                         @endif
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Update</button>
+                    <button type="submit" class="btn btn-primary">Update Customer</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
-
             </form>
         </div>
     </div>

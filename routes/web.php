@@ -16,6 +16,8 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\RestaurantController;
+use App\Http\Controllers\HospitalController;
 
 Route::get('/locale/{lang}', [LangController::class, 'setlocale'])->name('lang.switch');
 
@@ -63,6 +65,8 @@ Route::middleware(['auth', 'super_admin'])->prefix('superadmin')->name('superadm
     Route::resource('customers', CustomerController::class);
     Route::resource('categories', CategoryController::class);
     Route::resource('comments', CommentController::class);
+    Route::resource('restaurants', RestaurantController::class);
+    Route::resource('hospitals', HospitalController::class);
 });
 
 Route::middleware(['auth', 'super_admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
@@ -74,14 +78,14 @@ Route::middleware(['auth', 'super_admin'])->prefix('superadmin')->name('superadm
 });
 
 
-
-
 Route::middleware(['auth', 'admin_only'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
     Route::resource('posts', PostController::class);
     Route::resource('customers', CustomerController::class);
     Route::resource('categories', CategoryController::class);
     Route::resource('comments', CommentController::class);
+    Route::resource('restaurants', RestaurantController::class);
+    Route::resource('hospitals', HospitalController::class);
 });
 
 // Writer

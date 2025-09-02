@@ -3,13 +3,24 @@
     $role = str_replace('super_admin', 'superadmin', $role);
     $panel = in_array($role, ['admin', 'superadmin']) ? $role : $role; // for route prefix
 @endphp
+<style>
+    p {
+        font-family: Khmer OS Battambang;
+    }
 
+    li a {
+        font-family: Khmer OS Battambang;
+    }
+    h5{
+         font-family: Khmer OS Battambang;
+    }
+</style>
 <div class="sidebar" data-background-color="dark">
     <div class="sidebar-logo">
         <div class="logo-header" data-background-color="dark">
             <a href="{{ route('home') }}" class="logo">
-                <img src="/p.png" alt="navbar brand" class="navbar-brand" height="50" />
-                <h5 class="text-white m-2">AdminSystem</h5>
+                <img src="/Logo_Camboshear.png" alt="navbar brand" class="navbar-brand" height="50" />
+                <h5 class="text-white m-2">ប្រពន្ធចែករំចែក</h5>
             </a>
             <div class="nav-toggle">
                 <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
@@ -27,29 +38,28 @@
                 <li class="nav-item active">
                     <a data-bs-toggle="collapse" href="#dashboard" class="collapsed" aria-expanded="false">
                         <i class="fas fa-home"></i>
-                        <p>Home Dashboard</p>
+                        <p>ទំព័រដើម</p>
                         <span class="caret"></span>
                     </a>
                     <div class="collapse" id="dashboard">
                         <ul class="nav nav-collapse">
-                            @if($role === 'superadmin')
+                            @if ($role === 'superadmin')
                                 <li>
                                     <a href="{{ route('superadmin.users.index') }}">
-                                        <span class="sub-item">Manage Users</span>
+                                        <span class="sub-item">គ្រប់គ្រងអ្នកប្រើប្រាស់</span>
                                     </a>
                                 </li>
-                               
                             @endif
 
-                            @if(in_array($role, ['superadmin', 'admin']))
+                            @if (in_array($role, ['superadmin', 'admin']))
                                 <li>
                                     <a href="{{ route($panel . '.customers.index') }}">
-                                        <span class="sub-item">Customers</span>
+                                        <span class="sub-item">គ្រប់គ្រងអតិថិជន</span>
                                     </a>
                                 </li>
                             @endif
 
-                            @if($role === 'writer')
+                            @if ($role === 'writer')
                                 <li>
                                     <a href="{{ route('writer.dashboard') }}">
                                         <span class="sub-item">Writer Dashboard</span>
@@ -58,7 +68,7 @@
                             @elseif($role === 'customer')
                                 <li>
                                     <a href="{{ route('home') }}">
-                                        <span class="sub-item">Customer Dashboard</span>
+                                        <span class="sub-item">អតិថិជន</span>
                                     </a>
                                 </li>
                             @endif
@@ -76,14 +86,19 @@
                     <li class="nav-item">
                         <a data-bs-toggle="collapse" href="#base">
                             <i class="fas fa-layer-group"></i>
-                            <p>Categories</p>
+                            <p>ប្រភេទការផ្សព្វផ្សាយ</p>
                             <span class="caret"></span>
                         </a>
                         <div class="collapse" id="base">
                             <ul class="nav nav-collapse">
                                 <li>
-                                    <a href="{{ route($panel . '.categories.index') }}">
-                                        <span class="sub-item">All Categories</span>
+                                    <a href="{{ route($panel . '.restaurants.index') }}">
+                                        <span class="sub-item">ភោជនីដ្ឋាន</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route($panel . '.hospitals.index') }}">
+                                        <span class="sub-item">សេវាកម្មសាធារណៈ</span>
                                     </a>
                                 </li>
                             </ul>
@@ -96,17 +111,30 @@
                     <li class="nav-item">
                         <a data-bs-toggle="collapse" href="#poster">
                             <i class="fas fa-image"></i>
-                            <p>Poster</p>
+                            <p>ការផ្សព្វផ្សាយ</p>
                             <span class="caret"></span>
                         </a>
                         <div class="collapse" id="poster">
                             <ul class="nav nav-collapse">
                                 <li>
-                                    <a href="{{ route($panel . '.posts.index') }}">
-                                        <span class="sub-item">All Posters</span>
+                                    <a href="{{ route($panel . '.categories.index') }}">
+                                        <span class="sub-item">ប្រភេទ</span>
                                     </a>
+
                                 </li>
-                                
+                                <li>
+                                    <a href="{{ route($panel . '.posts.index') }}">
+                                        <span class="sub-item">ផ្សព្វផ្សាយ</span>
+                                    </a>
+
+                                </li>
+                                <li>
+                                    <a href="{{ route($panel . '.comments.index') }}">
+                                        <span class="sub-item">មតិយោបល់</span>
+                                    </a>
+
+                                </li>
+
                             </ul>
                         </div>
                     </li>
@@ -117,7 +145,7 @@
                     <li class="nav-item">
                         <a data-bs-toggle="collapse" href="#comment">
                             <i class="fas fa-comments"></i>
-                            <p>Comments</p>
+                            <p>របាយការណ៍</p>
                             <span class="caret"></span>
                         </a>
                         <div class="collapse" id="comment">

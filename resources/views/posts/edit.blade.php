@@ -1,106 +1,93 @@
-@extends('layouts.app')
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal{{ $post->id }}" tabindex="-1" aria-labelledby="editModalLabel{{ $post->id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ route($role . '.posts.update', $post->id) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
 
-@section('data_one')
-    <div class="container mt-3 p-4"
-        style="max-width: 900px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px;">
-
-        <h4 class="mb-4">Edit Post</h4>
-
-        <form method="POST" action="{{ route($role . '.posts.update', $post_->id) }}" enctype="multipart/form-data"
-            class="small">
-            @csrf
-            @method('PUT')
-
-            <div class="row">
-                <!-- Left column -->
-                <div class="col-md-6">
-                    <div class="mb-2">
-                        <label class="form-label fw-semibold">Title</label>
-                        <input type="text" name="title" class="form-control form-control-sm"
-                            value="{{ old('title', $post_->title) }}" required>
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label fw-semibold">Slug</label>
-                        <input type="text" name="slug" class="form-control form-control-sm"
-                            value="{{ old('slug', $post_->slug) }}">
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label fw-semibold">Content</label>
-                        <textarea name="content" class="form-control form-control-sm" rows="5" required>{{ old('content', $post_->content) }}</textarea>
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label fw-semibold">Poster Head</label>
-                        <input type="text" name="poster_head" class="form-control form-control-sm"
-                            value="{{ old('poster_head', $post_->poster_head) }}">
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label fw-semibold">Poster Sizes (comma separated)</label>
-                        <input type="text" name="poster_sizes" class="form-control form-control-sm"
-                            value="{{ old('poster_sizes', is_array($post_->poster_sizes) ? implode(',', $post_->poster_sizes) : '') }}">
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label fw-semibold">Status</label>
-                        <select name="status" class="form-select form-select-sm" required>
-                            <option value="draft" {{ old('status', $post_->status) === 'draft' ? 'selected' : '' }}>Draft
-                            </option>
-                            <option value="published" {{ old('status', $post_->status) === 'published' ? 'selected' : '' }}>
-                                Published</option>
-                        </select>
-                    </div>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel{{ $post->id }}">Edit Post #{{ $post->id }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
-                <!-- Right column -->
-                <div class="col-md-6">
-                    <div class="mb-2">
-                        <label class="form-label fw-semibold">Customer</label>
-                        <select name="customer_id" class="form-select form-select-sm" required>
+                <div class="modal-body row">
+                    {{-- Validation Errors --}}
+                    @if ($errors->any() && session('edit_post_id') == $post->id)
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <!-- Content -->
+                    <div class="mb-3 col-md-12">
+                        <label for="content{{ $post->id }}" class="form-label">Content</label>
+                        <textarea name="content" id="content{{ $post->id }}" class="form-control" rows="3" required>{{ old('content', $post->content) }}</textarea>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="mb-3 col-md-6">
+                        <label for="status{{ $post->id }}" class="form-label">Status</label>
+                        <select name="status" id="status{{ $post->id }}" class="form-select" required>
+                            <option value="draft" {{ old('status', $post->status) == 'draft' ? 'selected' : '' }}>Draft</option>
+                            <option value="published" {{ old('status', $post->status) == 'published' ? 'selected' : '' }}>Published</option>
+                            <option value="archived" {{ old('status', $post->status) == 'archived' ? 'selected' : '' }}>Archived</option>
+                        </select>
+                    </div>
+
+                    <!-- Customer -->
+                    <div class="mb-3 col-md-6">
+                        <label for="customer_id{{ $post->id }}" class="form-label">Customer</label>
+                        <select name="customer_id" id="customer_id{{ $post->id }}" class="form-select" required>
                             @foreach ($customers as $customer)
-                                <option value="{{ $customer->id }}"
-                                    {{ old('customer_id', $post_->customer_id) == $customer->id ? 'selected' : '' }}>
+                                <option value="{{ $customer->id }}" {{ old('customer_id', $post->customer_id) == $customer->id ? 'selected' : '' }}>
                                     {{ $customer->name }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
-                    <div class="mb-2">
-                        <label class="form-label fw-semibold">Category</label>
-                        <select name="category_id" class="form-select form-select-sm" required>
+                    <!-- Category -->
+                    <div class="mb-3 col-md-6">
+                        <label for="category_id{{ $post->id }}" class="form-label">Category</label>
+                        <select name="category_id" id="category_id{{ $post->id }}" class="form-select" required>
                             @foreach ($categories as $category)
-                                <option value="{{ $category->id }}"
-                                    {{ old('category_id', $post_->category_id) == $category->id ? 'selected' : '' }}>
+                                <option value="{{ $category->id }}" {{ old('category_id', $post->category_id) == $category->id ? 'selected' : '' }}>
                                     {{ $category->name }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Current Image</label><br>
-                        @if ($post_->image)
-                            <img src="{{ asset('storage/' . $post_->image) }}" alt="Post Image"
-                                style="max-height: 120px; border-radius: 4px; box-shadow: 0 0 5px rgba(0,0,0,0.1);">
-                        @else
-                            <p class="text-muted fst-italic">No image uploaded.</p>
-                        @endif
-                    </div>
+                    <!-- Current Images -->
+                    @if ($post->images && is_array($post->images))
+                        <div class="mb-3 col-md-12">
+                            <label class="form-label">Current Images</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach ($post->images as $image)
+                                    <img src="{{ asset('storage/' . $image) }}" alt="Image" class="img-thumbnail" style="height: 80px; object-fit: cover;">
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Change Image</label>
-                        <input type="file" name="image" class="form-control form-control-sm">
-                    </div>
-
-                    <div class="d-flex justify-content-start gap-2 mt-4">
-                        <button type="submit" class="btn btn-sm btn-primary">Update Post</button>
-                        <a href="{{ route($role . '.posts.index') }}" class="btn btn-sm btn-secondary">Cancel</a>
+                    <!-- New Images -->
+                    <div class="mb-3 col-md-12">
+                        <label for="images{{ $post->id }}" class="form-label">Upload New Images</label>
+                        <input type="file" name="images[]" id="images{{ $post->id }}" class="form-control" multiple accept="image/*">
+                        <small class="text-muted">Uploading new images will replace old ones.</small>
                     </div>
                 </div>
-            </div>
-        </form>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Update Post</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
     </div>
-@endsection
+</div>

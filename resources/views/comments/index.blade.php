@@ -1,154 +1,202 @@
-@php
-    $role = strtolower(auth()->user()->roles->pluck('name')->first() ?? '');
-    $role = str_replace('super_admin', 'superadmin', $role);
-@endphp
-
-@extends('home')
+@extends('layouts.app')
 
 @section('data_one')
-    <div class="container mt-4">
-        <h2 class="mb-4">Comments Management</h2>
+    @php
+        $role = strtolower(auth()->user()->roles->pluck('name')->first() ?? '');
+        $role = str_replace('super_admin', 'superadmin', $role);
+    @endphp
 
-        <!-- Success Message -->
+    <div class="container mt-4">
+        <h3 class="mb-4">Comments Management</h3>
+
+        <!-- Flash Success -->
         @if (session('success'))
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             <script>
                 Swal.fire({
+                    toast: true,
+                    position: 'top-end',
                     icon: 'success',
-                    title: 'Success!',
-                    text: '{{ session('success') }}',
+                    title: '{{ session('success') }}',
+                    showConfirmButton: false,
                     timer: 2500,
-                    showConfirmButton: false
+                    timerProgressBar: true
                 });
             </script>
         @endif
 
         <!-- Add Comment Button -->
         <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createCommentModal">
-            Add New Comment
+            <i class="fas fa-plus me-1"></i> Add Comment
         </button>
 
-        <!-- Comments Table -->
         @if ($comments->count())
-            <table class="table table-bordered table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>#</th>
-                        <th>Post</th>
-                        <th>Customer</th>
-                        <th>Comment</th>
-                        <th>F</th>
-                        <th>Created At</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($comments as $comment)
+            <div class="table-responsive" style="max-height: 600px; overflow-y:auto;">
+                <table class="table table-bordered table-hover text-center mb-0">
+                    <thead class="table-dark sticky-top">
                         <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $comment->post->title }}</td>
-                            <td>
-                                @if (!empty($comment->user->name))
-                                    {{ $comment->user->name }}
-                                @elseif (!empty($comment->customer->name))
-                                    {{ $comment->customer->name }}
-                                @else
-                                    N/A
-                                @endif
-                            </td>
-
-                            <td>
-                                @if ($comment->user->hasRole('super_admin'))
-                                    <span class="badge bg-danger">Super Admin</span>
-                                @elseif($comment->user->hasRole('admin'))
-                                    <span class="badge bg-primary">Admin</span>
-                                @elseif($comment->user->hasRole('writer'))
-                                    <span class="badge bg-warning text-dark">Writer</span>
-                                @elseif($comment->user->hasRole('customer'))
-                                    <span class="badge bg-secondary">Customer</span>
-                                @else
-                                    <span class="badge bg-light text-dark">User</span>
-                                @endif
-                            </td>
-                            <td>{{ $comment->body }}</td>
-                            <td>{{ $comment->created_at?->format('Y-m-d H:i') ?? 'N/A' }}</td>
-                            <td>
-                                <!-- Show Modal Trigger -->
-                                <button class="btn btn-info btn-sm" data-bs-toggle="modal"
-                                    data-bs-target="#showCommentModal{{ $comment->id }}">Show</button>
-
-                                <!-- Edit Modal Trigger -->
-                                <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
-                                    data-bs-target="#editCommentModal{{ $comment->id }}">Edit</button>
-
-                                <!-- Delete -->
-                                <form action="{{ route($role . '.comments.destroy', $comment->id) }}" method="POST"
-                                    class="d-inline" onsubmit="return confirmDelete(event)">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="btn btn-danger btn-sm">Delete</button>
-                                </form>
-                            </td>
+                            <th>#</th>
+                            <th>Post</th>
+                            <th>Commenter</th>
+                            <th>Body</th>
+                            <th>Created At</th>
+                            <th width="180">Actions</th>
                         </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($comments as $idx => $comment)
+                            <tr>
+                                <td>{{ $comments->firstItem() + $idx }}</td>
+                                <td>{{ $comment->post->content ?? 'N/A' }}</td>
+                                <td>
+                                    @if ($comment->user)
+                                        <span class="badge bg-primary">{{ $comment->user->name }}</span>
+                                    @elseif($comment->customer)
+                                        <span class="badge bg-success">{{ $comment->customer->name }}</span>
+                                    @else
+                                        <span class="badge bg-secondary">Unknown</span>
+                                    @endif
+                                </td>
+                                <td>{{ Str::limit($comment->body, 50) }}</td>
+                                <td>{{ $comment->created_at?->format('Y-m-d H:i') ?? 'N/A' }}</td>
+                                <td>
+                                    <!-- Show -->
+                                    <button class="btn btn-info btn-sm mb-1" data-bs-toggle="modal"
+                                        data-bs-target="#showCommentModal{{ $comment->id }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <!-- Edit -->
+                                    <button class="btn btn-warning btn-sm mb-1" data-bs-toggle="modal"
+                                        data-bs-target="#editCommentModal{{ $comment->id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <!-- Delete -->
+                                    <form action="{{ route($role . '.comments.destroy', $comment->id) }}" method="POST"
+                                        class="d-inline delete-form">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger mb-1" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
 
-                        <!-- Show Modal -->
-                        <div class="modal fade" id="showCommentModal{{ $comment->id }}" tabindex="-1">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Comment Details</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <p><strong>Post:</strong> {{ $comment->post->title }}</p>
-                                        <p><strong>Customer:</strong> {{ $comment->customer->name }}</p>
-                                        <p><strong>Comment:</strong> {{ $comment->body }}</p>
-                                        <p><strong>Created At:</strong> {{ $comment->created_at }}</p>
+                            <!-- Show Modal -->
+                            <div class="modal fade" id="showCommentModal{{ $comment->id }}" tabindex="-1"
+                                aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content p-3">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Comment Details</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-start">
+                                            <p><strong>Post:</strong> {{ $comment->post->content ?? 'N/A' }}</p>
+                                            <p><strong>Commenter:</strong>
+                                                {{ $comment->user->name ?? ($comment->customer->name ?? 'Unknown') }}</p>
+                                            <p><strong>Comment:</strong> {{ $comment->body }}</p>
+                                            <p><strong>Created At:</strong> {{ $comment->created_at }}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Edit Modal -->
-                        <div class="modal fade" id="editCommentModal{{ $comment->id }}" tabindex="-1">
-                            <div class="modal-dialog">
-                                <form action="{{ route($role . '.comments.update', $comment->id) }}" method="POST"
-                                    class="modal-content">
-                                    @csrf
-                                    @method('PUT')
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Edit Comment</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            <!-- Edit Modal -->
+                            <!-- Edit Comment Modal -->
+                            <div class="modal fade" id="editCommentModal{{ $comment->id }}" tabindex="-1"
+                                aria-labelledby="editCommentModalLabel{{ $comment->id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <form action="{{ route($role . '.comments.update', $comment->id) }}"
+                                            method="POST">
+                                            @csrf
+                                            @method('PUT')
+
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="editCommentModalLabel{{ $comment->id }}">Edit
+                                                    Comment #{{ $comment->id }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                    aria-label="Close"></button>
+                                            </div>
+
+                                            <div class="modal-body row">
+                                                {{-- Validation Errors --}}
+                                                @if ($errors->any() && session('edit_comment_id') == $comment->id)
+                                                    <div class="alert alert-danger col-12">
+                                                        <ul class="mb-0">
+                                                            @foreach ($errors->all() as $error)
+                                                                <li>{{ $error }}</li>
+                                                            @endforeach
+                                                        </ul>
+                                                    </div>
+                                                @endif
+
+                                                <!-- Comment Body -->
+                                                <div class="mb-3 col-md-12">
+                                                    <label for="body{{ $comment->id }}" class="form-label">Comment</label>
+                                                    <textarea name="body" id="body{{ $comment->id }}" class="form-control" rows="4" required>{{ old('body', $comment->body) }}</textarea>
+                                                </div>
+
+                                                <!-- Optionally: Post Selection -->
+                                                <div class="mb-3 col-md-6">
+                                                    <label for="post_id{{ $comment->id }}" class="form-label">Post</label>
+                                                    <select name="post_id" id="post_id{{ $comment->id }}"
+                                                        class="form-select" required>
+                                                        @foreach ($posts as $post)
+                                                            <option value="{{ $post->id }}"
+                                                                {{ old('post_id', $comment->post_id) == $post->id ? 'selected' : '' }}>
+                                                                {{ $post->content }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+
+                                                <!-- Optionally: Commenter Type (User/Customer) -->
+                                                <div class="mb-3 col-md-6">
+                                                    <label for="commenter_type{{ $comment->id }}"
+                                                        class="form-label">Commenter Type</label>
+                                                    <select name="commenter_type" id="commenter_type{{ $comment->id }}"
+                                                        class="form-select">
+                                                        <option value="user" {{ $comment->user_id ? 'selected' : '' }}>
+                                                            User</option>
+                                                        <option value="customer"
+                                                            {{ $comment->customer_id ? 'selected' : '' }}>Customer</option>
+                                                    </select>
+                                                </div>
+
+                                            </div>
+
+                                            <div class="modal-footer">
+                                                <button type="submit" class="btn btn-success">Update Comment</button>
+                                                <button type="button" class="btn btn-secondary"
+                                                    data-bs-dismiss="modal">Cancel</button>
+                                            </div>
+                                        </form>
                                     </div>
-                                    <div class="modal-body">
-                                        <div class="mb-3">
-                                            <label for="body" class="form-label">Comment</label>
-                                            <textarea name="body" class="form-control" required>{{ $comment->body }}</textarea>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button class="btn btn-success">Update</button>
-                                        <button type="button" class="btn btn-secondary"
-                                            data-bs-dismiss="modal">Cancel</button>
-                                    </div>
-                                </form>
+                                </div>
                             </div>
-                        </div>
-                    @endforeach
-                </tbody>
-            </table>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="mt-3">
+                {{ $comments->appends(request()->query())->links('pagination::bootstrap-5') }}
+            </div>
         @else
             <div class="alert alert-info">No comments found.</div>
         @endif
     </div>
 
-    <!-- Create Modal -->
-    <div class="modal fade" id="createCommentModal" tabindex="-1" aria-labelledby="createCommentModalLabel"
-        aria-hidden="true">
+    <!-- Create Comment Modal -->
+    <div class="modal fade" id="createCommentModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <form action="{{ route($role . '.comments.store') }}" method="POST" class="modal-content">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title" id="createCommentModalLabel">Add Comment</h5>
+                    <h5 class="modal-title">Add Comment</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -165,39 +213,38 @@
                         <label for="body" class="form-label">Comment</label>
                         <textarea name="body" id="body" class="form-control" rows="4" required>{{ old('body') }}</textarea>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Customer</label>
-                        <input type="text" class="form-control" value="{{ Auth::user()->name }}" readonly>
-                        <input type="hidden" name="customer_id" value="{{ Auth::id() }}">
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-primary">Submit</button>
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- SweetAlert Delete Confirmation -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        function confirmDelete(event) {
-            event.preventDefault();
-            Swal.fire({
-                title: 'Are you sure?',
-                text: 'This comment will be permanently deleted!',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    event.target.submit();
-                }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.delete-form').forEach(form => {
+                form.addEventListener('submit', e => {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: "This comment will be permanently deleted!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, delete it!',
+                        cancelButtonText: 'Cancel'
+                    }).then(result => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
             });
-            return false;
-        }
+        });
     </script>
 @endsection
